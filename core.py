@@ -1,6 +1,6 @@
 class GameElement(object):
     IMAGE = "StoneBlock"
-    SOLID = False
+    SOLID = True
     
     def __init__(self):
         self.sprite = None
