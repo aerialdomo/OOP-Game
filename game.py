@@ -14,8 +14,6 @@ PLAYER = None
 GAME_WIDTH = 7
 GAME_HEIGHT = 7
 
-# if GAME_WIDTH > 7 and GAME_HEIGHT > 7:
-
 #### Put class definitions here ####
 
 class Rock(GameElement):
@@ -38,51 +36,74 @@ class Character(GameElement):
 
 	def __init__(self):
 		GameElement.__init__(self)
+		self.inventory = []	
+
+
+class NewChar(Character):
+	IMAGE = "Horns"
+
+	def __init__(self):
+		GameElement.__init__(self)
 		self.inventory = []
 
-
-# class Character_Change(Character):
-# 	IMAGE = "Horns"
-
-# 	def __init__(self):
-# 		GameElement.__init__(self)
-# 		GAME_BOARD.register(self)
-# 		GAME_BOARD.set_el(4, 4, self)
+	def interact(self):
+		pass	
 
 class Gem(GameElement):
 	SOLID = False	
 
-	# def interact(self):
-	# 	pass # Do stuff
-
 class BlueGem(Gem):
 	IMAGE="BlueGem"
 
-	#changes gem to another thing
 	def interact(self, player):
 		player.inventory.append(self)
 		GAME_BOARD.draw_msg("You just acquired a gem! You have %d items!" %(len(player.inventory)))
 
-# class EvilBlueGem(Gem):
-# 	IMAGE="BlueGem"
+class Heart(Gem):
+	IMAGE="Heart"
 
-# 	def interact(self, new_char):
-# 		#change into Horns
-# 		# NEW_CHAR = Character_Change()
-# 		# GAME_BOARD.del_el(player.x, player.y)
-# 		# GAME_BOARD.register(NEW_CHAR)
-# 		# GAME_BOARD.set_el(4, 4, NEW_CHAR)
-# 		new_char.IMAGE = "RedGem"
-# 		print new_char.IMAGE
+	def interact(self, player):
+		#change into Horns
+		GAME_BOARD.del_el(player.x,player.y)
+		HORNS = NewChar()
+		GAME_BOARD.register(HORNS)
+		GAME_BOARD.set_el(player.x, player.y, HORNS)	
+		#set HORNS inventory to be the same as PLAYER
+		HORNS.inventory = PLAYER.inventory
+		#in game, PLAYER cannot change image mid game unless a new char is created
+		global PLAYER
+		PLAYER = HORNS	
+
 	
 class OrangeGem(Gem):
 	IMAGE = "OrangeGem"
-# class Gem_Props(Gem, ):
 	
 	#adds things to inventory
 	def interact(self, player):
 		player.inventory.append(self)
 		GAME_BOARD.draw_msg("You just acquired a gem! You have %d items!" %(len(player.inventory)))
+
+class DoorClosed(GameElement):
+	IMAGE = "DoorClosed"
+	SOLID = True
+
+	def interact(self, player):
+		GAME_BOARD.draw_msg("You need 2 Gems to open this door")
+
+		if len(PLAYER.inventory) == 2: 
+			GAME_BOARD.del_el(5,5)
+			door_open = DoorOpen()
+			GAME_BOARD.register(door_open)
+			GAME_BOARD.set_el(5,5, door_open)
+			GAME_BOARD.draw_msg("Winner Winner Chicken Dinner!")
+
+class DoorOpen(GameElement):
+	IMAGE = "DoorOpen"
+	SOLID = True
+
+	def interact(self, player):
+		pass
+
 # ####   End class definitions    ####
 
 #### Game initialization code here
@@ -116,17 +137,13 @@ def initialize():
 	GAME_BOARD.set_el(2, 2, PLAYER)
 	print PLAYER
 
-	#Initializing Horns
-	# global NEW_CHAR
-	# NEW_CHAR = Character_Change()
-	# if NEW_CHAR == (5,5, PLAYER):
-	# 	GAME_BOARD.register(NEW_CHAR)
-	# 	GAME_BOARD.del_el(5, 5)
-	# 	GAME_BOARD.set_el(5, 5, NEW_CHAR)
-	# 	print NEW_CHAR.IMAGE
+	# Initializing Horns
+	global HORNS
+	HORNS = NewChar()
+	GAME_BOARD.register(HORNS)
 
 	#message from our sponsors
-	GAME_BOARD.draw_msg("The cake is a lie.")
+	GAME_BOARD.draw_msg("The heart is a lie.")
 
 	#gem code
 	gem_orange = OrangeGem()
@@ -138,15 +155,13 @@ def initialize():
 	GAME_BOARD.set_el(1, 1, gem_blue)
 	# print "Blue gem", gem_blue.IMAGE
 
-	# evil_blue_gem = EvilBlueGem()
-	# GAME_BOARD.register(evil_blue_gem)
-	# GAME_BOARD.set_el(4,4, evil_blue_gem)
-	# PLAYER.interact
-	# GAME_BOARD.del_el(4,4)
-	# evil_blue_gem.interact
-	# # GAME_BOARD.register(NEW_CHAR)
-	# # GAME_BOARD.set_el(4, 4, NEW_CHAR)
-	# 
+	heart = Heart()
+	GAME_BOARD.register(heart)
+	GAME_BOARD.set_el(4, 4, heart)
+
+	door_closed = DoorClosed()
+	GAME_BOARD.register(door_closed)
+	GAME_BOARD.set_el(5,5, door_closed)
 
 
 def keyboard_handler():
@@ -161,23 +176,22 @@ def keyboard_handler():
 	if KEYBOARD[key.RIGHT]:
 		direction = "right"
 
-	# elif KEYBOARD[key.SPACE]:
-	# 	GAME_BOARD.erase_msg()
-
 	if direction:
 		next_location = PLAYER.next_pos(direction)
 		next_x = next_location[0]
 		next_y = next_location[1]
 
+		#makes the girl not fall off the map
+		if next_x <0 or next_x >= GAME_WIDTH or next_y <0 or next_y >= GAME_HEIGHT:
+			return None
+
+		#checking to see if there is already something there
 		existing_el = GAME_BOARD.get_el(next_x, next_y)
 
 		if existing_el:
 			existing_el.interact(PLAYER)
 
-		# if existing_el
-
+		#moves the girl	
 		if existing_el is None or not existing_el.SOLID:
 			GAME_BOARD.del_el(PLAYER.x, PLAYER.y)
 			GAME_BOARD.set_el(next_x, next_y, PLAYER)
-
-
